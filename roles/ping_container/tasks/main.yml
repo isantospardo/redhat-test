@@ -1,0 +1,14 @@
+- name: Ping container
+  ignore_errors: yes
+  command: pytest test_ping.py
+  retries: 3
+  delay: 5
+  register: result
+  until: result.rc == 0
+
+- name: Test container reachability
+  debug:
+    msg: "Not possible to ping container"
+  when: result.rc != 0
+  failed_when: result.rc != 0
+

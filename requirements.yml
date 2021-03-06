@@ -1,0 +1,3 @@
+# Install ansible modules
+collections:
+- name: community.docker

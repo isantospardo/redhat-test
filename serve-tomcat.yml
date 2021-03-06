@@ -1,0 +1,39 @@
+- hosts: localhost
+  gather_facts: no
+  pre_tasks:
+  - set_fact:
+      container_name: "mycontainer"
+      tag: "latest"
+  tasks:
+  - name: Get container status
+    shell: docker ps -a -f name="{{ container_name }}" --format {%raw%}"table {{.Status}}"{%endraw%} | awk 'FNR == 2 {print}' | awk '{print $1}'
+    register: result_container_status
+
+  - name: Print the status of the container
+    debug:
+      msg: "The container {{ container_name }} is already running"
+    when: '"Up" in result_container_status.stdout'
+
+  # Build dockerfile
+  - include_role:
+      name: build_dockerfile
+    when: '"Up" not in result_container_status.stdout'
+
+  # Run container
+  - include_role:
+      name: run_container
+    when: '"Up" not in result_container_status.stdout'
+
+  - name: Get container status
+    shell: docker ps -a -f name="{{ container_name }}" --format {%raw%}"table {{.Status}}"{%endraw%} | awk 'FNR == 2 {print}' | awk '{print $1}'
+    register: result_container_status
+
+  - name: Print the status of the container
+    debug:
+      msg: "The container status is {{ result_container_status.stdout }}"
+    failed_when:
+      - '"Up" not in result_container_status.stdout'
+
+  - include_role:
+      name: ping_container
+    when: '"Up" in result_container_status.stdout'
